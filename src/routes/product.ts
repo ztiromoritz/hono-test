@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
-import { isAdmin, isAdmin2, isUser } from '../middleware/auth'
+import { isAdmin, isUser } from '../middleware/auth'
 
 export const products = new Hono()
+
 
 products.get('/', isAdmin, (c) => {
 	const p = c.get("accountId")
