@@ -1,8 +1,11 @@
 import { Hono } from 'hono'
+import { showRoutes } from 'hono/dev'
 import { auth, isAdmin, useUser } from './middleware/auth'
 import { products } from './routes/product';
+import { accountId } from './middleware/account';
 
 const app = new Hono()
+app.use(accountId());
 app.use(auth());
 
 app.get('/', isAdmin, (c) => {
@@ -12,5 +15,6 @@ app.get('/', isAdmin, (c) => {
 
 app.route("/accounts/:account_id/products/", products)
 
+showRoutes(app)
 
 export default app

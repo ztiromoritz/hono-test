@@ -1,8 +1,12 @@
 import { Context, MiddlewareHandler, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception'
-import { useAccount } from './account';
+import { createMiddleware } from 'hono/factory';
 
-
+declare module 'hono' {
+  interface ContextVariableMap {
+    user?: UserInfo
+  }
+}
 
 export type UserInfo = {
 	name: string;
@@ -10,27 +14,24 @@ export type UserInfo = {
 	role: "ADMIN" | "USER"
 }
 
-export type UserContext = Context<{ Variables: { user: UserInfo } }>
 
 // Type context access
-export function useUser(c: Context): UserInfo {
-	const userContext = c as UserContext;
-	return userContext.get("user");
+export function useUser(c: Context){
+	return c.get("user");
 }
 
 // Main middleware
 export const auth = (): MiddlewareHandler => {
-	return async (c: UserContext, next) => {
+	return async (c: Context, next) => {
 		c.set("user", { name: 'moritz', id: '1234243', role: "ADMIN" });
 		await next();
 	}
 }
 
 // Helper middleware
-export const isAdmin = async (c: Context<{ Variables: { user: UserInfo } }>, next: Next) => {
-	const user = useUser(c);
-
-	const account_id = useAccount(c);
+export const isAdmin = async (c: Context, next: Next) => {
+	const user = c.get("user");
+	const account_id = c.get("accountId");
 
 	console.log("isAdmin",  account_id )
 	if (user?.role !== 'ADMIN')
@@ -38,10 +39,21 @@ export const isAdmin = async (c: Context<{ Variables: { user: UserInfo } }>, nex
 	await next()
 }
 
-export const isUser = async (c: Context<{ Variables: { user: UserInfo } }>, next: Next) => {
-	const user = useUser(c);
 
-	const account_id = useAccount(c);
+export const isAdmin2 = createMiddleware(async(c,next)=>{
+	const user = c.get("user");
+	const account_id = c.get("accountId");
+
+	console.log("isAdmin",  account_id )
+
+	if (user?.role !== 'ADMIN')
+		throw new HTTPException(403, { message: 'Forbidden' })
+	await next()
+})
+
+export const isUser = async (c: Context, next: Next) => {
+	const user = c.get("user");
+	const account_id = c.get("accountId");
 
 	console.log("user",  account_id )
 	if (user?.role !== 'USER' && user?.role !== "ADMIN")
