@@ -8,12 +8,18 @@ const app = new Hono()
 app.use(accountId());
 app.use(auth());
 
+
 app.get('/', isAdmin, (c) => {
 	const user = useUser(c);
 	return c.text('Hello Hono!' + JSON.stringify(user))
 })
 
 app.route("/accounts/:account_id/products/", products)
+
+app.onError((error, c)=>{
+	console.error(`${error}`)
+	return c.text('Internal Server Error', 500)
+})
 
 showRoutes(app)
 
